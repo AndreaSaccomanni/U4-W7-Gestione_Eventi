@@ -29,7 +29,7 @@ public class Utente {
     @Column(nullable = false, unique = true)
     private String username;
 
-    @JsonIgnore
+    @Column(nullable = false)
     private String password;
 
     @Column(nullable = false, unique = true)
@@ -40,10 +40,10 @@ public class Utente {
     @Column(nullable = false)
     private ERuolo ruolo;
 
-    @OneToMany(mappedBy = "organizzatore", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "organizzatore", cascade = CascadeType.ALL)
     private Set<Evento> eventiOrganizzati = new HashSet<>(); // Usare Set per evitare duplicati
 
-    @OneToMany(mappedBy = "utente", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "utente", cascade = CascadeType.ALL)
     private Set<Prenotazione> prenotazioni = new HashSet<>();
 
     public Utente(String nome, String cognome, String username, String password, String email, ERuolo ruolo) {

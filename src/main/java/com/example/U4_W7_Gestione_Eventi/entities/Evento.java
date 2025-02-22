@@ -20,6 +20,7 @@ public class Evento {
     @Id
     @GeneratedValue
     private Long idEvento;
+
     private String titolo;
     private String descrizione;
     private LocalDate dataEvento;

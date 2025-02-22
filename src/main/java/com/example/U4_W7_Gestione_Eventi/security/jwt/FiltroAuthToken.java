@@ -10,18 +10,16 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
+import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-
-//filtro per l'autenticazione
-//OncePerRequestFilter -> classe astratta presente nella libreria
+@Component
 public class FiltroAuthToken extends OncePerRequestFilter {
 
     @Autowired
     JwtUtils utils;
-
 
     @Autowired
     UserDetailsService userDetailsService;
@@ -29,40 +27,43 @@ public class FiltroAuthToken extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
 
-        //ottengo un JWT dai cookie http
+        // Ottengo un JWT dall'intestazione Authorization
+        String jwt = analizzaJwt(request);
 
-        String jwt = analiizaJwt((request));
-
-        // se la richiesta presenta un JWT, viene convalidata
-        if(jwt != null && utils.validazioneJwtToken(jwt)){
-
-            //recupero l'username dal token JWT
+        // Se la richiesta contiene un JWT valido, viene convalidato
+        if (jwt != null && utils.validazioneJwtToken(jwt)) {
+            // Recupero l'username dal token JWT
             String username = utils.recuperoUsernameDaToken(jwt);
 
-            //recupero UserDetails(dettagli  del token) da Username -> creare un oggetto Authentication
+            // Recupero i dettagli dell'utente
             UserDetails dettagliUtente = userDetailsService.loadUserByUsername(username);
 
-            //creazione di un oggetto UsernamePasswordAuthenicationToken
+            // Creo un oggetto di autenticazione (UsernamePasswordAuthenticationToken)
             UsernamePasswordAuthenticationToken autenticazione =
                     new UsernamePasswordAuthenticationToken(
                             dettagliUtente,
                             null,
                             dettagliUtente.getAuthorities()
                     );
-            // setto i dettagli dell'oggetto UsernamePasswordAuthenticationToken
+
+            // Imposto i dettagli dell'oggetto di autenticazione
             autenticazione.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
-            //imposto userDetails corrente nel contesto (ambiente) di security
+            // Imposto l'autenticazione nel contesto di sicurezza di Spring
             SecurityContextHolder.getContext().setAuthentication(autenticazione);
         }
+
+        // Passo la richiesta al filtro successivo nella catena
+        filterChain.doFilter(request, response);
     }
 
-    private String analiizaJwt(HttpServletRequest request) {
+    private String analizzaJwt(HttpServletRequest request) {
+        // Recupero l'intestazione Authorization dalla richiesta HTTP
         String headAutenticazione = request.getHeader("Authorization");
-        //controllo sulla presenza di testo nel valore di autenticazione
-        // controllo se il valore recuperato inizia con "Bearer "
-        //Bearer 80d78a3dad1103b23937ed0787cfbc87
-        if (StringUtils.hasText(headAutenticazione) && (headAutenticazione.startsWith("Bearer "))) {
+
+        // Controllo se l'intestazione contiene un token di tipo "Bearer"
+        if (StringUtils.hasText(headAutenticazione) && headAutenticazione.startsWith("Bearer ")) {
+            // Rimuovo la parte "Bearer " e restituisco il token JWT
             return headAutenticazione.substring(7);
         }
 

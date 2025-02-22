@@ -41,7 +41,7 @@ public class JwtUtils {
 
     //recupero username dal JWT
     public String recuperoUsernameDaToken(String token){
-        String username= Jwts.parserBuilder().setSigningKey(recuperoChiave()).build().parseClaimsJwt(token).getBody().getSubject();
+        String username= Jwts.parserBuilder().setSigningKey(recuperoChiave()).build().parseClaimsJws(token).getBody().getSubject();
         return username;
     }
 
@@ -53,9 +53,14 @@ public class JwtUtils {
 
     //validazione del TOKEN JWT
     public boolean validazioneJwtToken(String token){
-        Jwts.parserBuilder().setSigningKey(recuperoChiave()).build().parse(token);
-        return true;
+        try {
+            Jwts.parserBuilder().setSigningKey(recuperoChiave()).build().parseClaimsJws(token);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
     }
+
 
     //recupero della chiave
     public Key recuperoChiave(){

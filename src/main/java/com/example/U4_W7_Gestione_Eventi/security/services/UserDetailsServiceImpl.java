@@ -24,6 +24,6 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
         //ritornare un oggetto di tipo interfaccia UserDetails
         //contenitore delle info che inserirò nel token
-        return UserDetailsImpl.costruisciOgggetto(user);
+        return UserDetailsImpl.costruisciOggetto(user);
     }
 }

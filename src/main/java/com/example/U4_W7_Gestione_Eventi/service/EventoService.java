@@ -28,7 +28,7 @@ public class EventoService {
                 new IllegalArgumentException("Utente non trovato"));
 
         // Verifica RUOLO UTENTE
-        if (utente.getRuolo().stream().noneMatch(ruolo -> ruolo.getNomeRuolo().equals("ORGANIZZATORE"))) {
+        if (!utente.isOrganizzatore()) {
             throw new IllegalArgumentException("Solo gli organizzatori possono creare eventi.");
         }
 

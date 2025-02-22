@@ -1,5 +1,6 @@
 package com.example.U4_W7_Gestione_Eventi.security.services;
 
+import com.example.U4_W7_Gestione_Eventi.entities.ERuolo;
 import com.example.U4_W7_Gestione_Eventi.entities.Utente;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.validation.constraints.Email;
@@ -15,9 +16,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
-//L'interfaccia userDetails contiene le info necessarie  durante l'autenticazione
-//per personalizzare i dettagli da inserire nel token JWT
-// aggiungendo email, id
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -27,41 +25,46 @@ public class UserDetailsImpl implements UserDetails {
     private String username;
     private String email;
 
+    private ERuolo ruolo;
+
     @JsonIgnore
     private String password;
 
-    //Si usa collection perche raggruppa List  Map HashMap,
-    // all'intenro ci devono essere filgi di GrantedAuthority
-    private Collection<? extends GrantedAuthority> ruoli;
+    // Rimuovi il campo ruoli (può essere derivato direttamente dal ruolo)
+    // private Collection<? extends GrantedAuthority> ruoli;
 
+    public static UserDetailsImpl costruisciOggetto(Utente user) {
 
-    public static UserDetailsImpl costruisciOgggetto(Utente user) {
-
-        //ogni oggetto ruolo lo trasfonrmo in un oggetto SimpleGrantedAuthority che contiene il nome del ruolo
-        List<GrantedAuthority> ruoliUtente = user.getRuolo().stream().map(ruolo -> new SimpleGrantedAuthority(ruolo.getNomeRuolo().name())).collect(Collectors.toList());
+        // Creazione di un oggetto ruoli come List di GrantedAuthority
+        List<GrantedAuthority> ruoliUtente = List.of(new SimpleGrantedAuthority(user.getRuolo().name()));
 
         return new UserDetailsImpl(
-                user.getIdUtente(),
+                user.getId(),
                 user.getUsername(),
                 user.getEmail(),
-                user.getPassword(),
-                ruoliUtente);
+                user.getRuolo(),
+                user.getPassword()
+        );
     }
 
+    public Long getId() {
+        return id;
+    }
 
+    // Restituisce un elenco di authorities basato sul ruolo dell'utente
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return ruoli;
+        return List.of(new SimpleGrantedAuthority(ruolo.name()));  // Restituisce una sola authority basata sul ruolo
     }
 
     @Override
     public String getPassword() {
-        return "";
+        return password;
     }
 
     @Override
     public String getUsername() {
-        return "";
+        return username;
     }
 
     @Override

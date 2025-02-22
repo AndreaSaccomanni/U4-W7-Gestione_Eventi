@@ -59,50 +59,45 @@ public class UtenteController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@Validated @RequestBody LoginRequest loginDto, BindingResult validazione){
-        if(validazione.hasErrors()){
+    public ResponseEntity<?> login(@Validated @RequestBody LoginRequest loginDto, BindingResult validazione) {
+        if (validazione.hasErrors()) {
             String messaggioErrore = "ERRORE DI VALIDAZIONE";
-            for(ObjectError errore : validazione.getAllErrors()){
-                messaggioErrore += errore.getDefaultMessage()+ "\n";
+            for (ObjectError errore : validazione.getAllErrors()) {
+                messaggioErrore += errore.getDefaultMessage() + "\n";
             }
-            return new ResponseEntity<>(messaggioErrore.toString(), HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(messaggioErrore, HttpStatus.BAD_REQUEST);
         }
 
-        //creo un oggetto che occorre per l'autenticazione
-        UsernamePasswordAuthenticationToken tokenNOAuthentication = new UsernamePasswordAuthenticationToken(loginDto.getUsername(), loginDto.getPassword());
+        // Creazione dell'oggetto per l'autenticazione
+        UsernamePasswordAuthenticationToken tokenNOAuthentication =
+                new UsernamePasswordAuthenticationToken(loginDto.getUsername(), loginDto.getPassword());
 
-        //invocare e recuperare l'authentication -> autenticazionne va a buon fine
-        //utilizzo ii gestore delle autenticazini che si basa su username e password
-        //recuperiamo l'autenticazione attraverso il metodo authenticate()
+        // Autenticazione dell'utente
         Authentication autenticazione = managerAuth.authenticate(tokenNOAuthentication);
 
-        //impostare l'autenticazione nel contesto di sicurezza String
+        // Imposta l'autenticazione nel contesto di sicurezza
         SecurityContextHolder.getContext().setAuthentication(autenticazione);
 
-        //genero il token finale in formato stringa
+        // Generazione del token JWT
         String token = utilitiesJwt.creaJwtToken(autenticazione);
 
-
-        //recupero le info che voglio inserire nwll risposta al client
+        // Recupero dei dettagli dell'utente autenticato
         UserDetailsImpl dettagliUtente = (UserDetailsImpl) autenticazione.getPrincipal();
-        List<String>  ruoliWeb = dettagliUtente.getAuthorities().stream()
-                .map(item -> item.getAuthority())
-                .collect(Collectors.toList());
 
-        //creo un oggetto JWTResponse che andrà nel ResponseEntity
+        // Recupero del ruolo dell'utente come stringa
+        String ruoloWeb = dettagliUtente.getRuolo().name();
+
+        // Creazione della risposta JWT
         JwtResponse responseJwt = new JwtResponse(
                 dettagliUtente.getUsername(),
                 dettagliUtente.getId(),
                 dettagliUtente.getPassword(),
-                ruoliWeb,
+                ruoloWeb,  // ← RUOLO SINGOLO
                 dettagliUtente.getEmail(),
                 token
         );
 
-        // gestione della risposta al client -> ResponseEntity
         return new ResponseEntity<>(responseJwt, HttpStatus.OK);
-
     }
-
 }
 
