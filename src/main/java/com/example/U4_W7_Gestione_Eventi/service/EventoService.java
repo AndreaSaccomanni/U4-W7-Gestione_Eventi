@@ -8,9 +8,11 @@ import com.example.U4_W7_Gestione_Eventi.repository.UtenteRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.nio.file.AccessDeniedException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class EventoService {
@@ -19,60 +21,64 @@ public class EventoService {
     private EventoRepository eventoRepository;
 
     @Autowired
-    private UtenteRepository utenteRepository;
+    private UtenteRepository utenteRepository; // Assicurati di avere un repository per Utente
 
-
-    public Evento creaEvento(Long idUtente, String titolo, String descrizione, LocalDate dataEvento, String luogo) {
-
-        Utente utente = utenteRepository.findById(idUtente).orElseThrow(() ->
-                new IllegalArgumentException("Utente non trovato"));
-
-        // Verifica RUOLO UTENTE
+    public Evento creaEvento(Long userId, String titolo, String descrizione, LocalDate dataEvento, String luogo) throws AccessDeniedException {
+        // Verifica se l'utente è un organizzatore
+        Utente utente = utenteRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Utente non trovato."));
         if (!utente.isOrganizzatore()) {
-            throw new IllegalArgumentException("Solo gli organizzatori possono creare eventi.");
+            throw new AccessDeniedException("Solo gli organizzatori possono creare eventi.");
         }
 
-
         Evento evento = new Evento();
+        evento.setOrganizzatore(utente); // Assicurati di avere un campo "organizzatore" in Evento
         evento.setTitolo(titolo);
         evento.setDescrizione(descrizione);
         evento.setDataEvento(dataEvento);
         evento.setLuogo(luogo);
-        evento.setOrganizzatore(utente);
-
         return eventoRepository.save(evento);
     }
 
-    public List<Evento> trovaTutti() {
-        return eventoRepository.findAll();
-    }
+    public Evento modificaEvento(Long userId, Long eventoId, String titolo, String descrizione, LocalDate dataEvento, String luogo) throws AccessDeniedException {
+        // Verifica se l'utente è un organizzatore
+        Utente utente = utenteRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Utente non trovato."));
+        if (!utente.isOrganizzatore()) {
+            throw new AccessDeniedException("Solo gli organizzatori possono modificare eventi.");
+        }
 
+        Evento evento = eventoRepository.findById(eventoId)
+                .orElseThrow(() -> new RuntimeException("Evento non trovato."));
 
-    public Evento trovaPerId(Long id) {
-        return eventoRepository.findById(id)
-                .orElseThrow(() -> new EventoNotFoundException("Evento non trovato con ID: " + id));
-    }
+        // Verifica che l'utente sia l'organizzatore dell'evento
+        if (!evento.getOrganizzatore().getId().equals(userId)) {
+            throw new AccessDeniedException("Non sei l'organizzatore di questo evento.");
+        }
 
-    public Evento salvaEvento(Evento evento) {
+        evento.setTitolo(titolo);
+        evento.setDescrizione(descrizione);
+        evento.setDataEvento(dataEvento);
+        evento.setLuogo(luogo);
         return eventoRepository.save(evento);
     }
 
-    public Evento aggiornaEvento(Long id, Evento eventoDettagli) {
-        Evento evento = trovaPerId(id);
-        evento.setTitolo(eventoDettagli.getTitolo());
-        evento.setDescrizione(eventoDettagli.getDescrizione());
-        evento.setDataEvento(eventoDettagli.getDataEvento());
-        evento.setLuogo(eventoDettagli.getLuogo());
+    public void rimuoviEvento(Long userId, Long eventoId) throws AccessDeniedException {
+        // Verifica se l'utente è un organizzatore
+        Utente utente = utenteRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Utente non trovato."));
+        if (!utente.isOrganizzatore()) {
+            throw new AccessDeniedException("Solo gli organizzatori possono rimuovere eventi.");
+        }
 
-        return eventoRepository.save(evento);
-    }
+        Evento evento = eventoRepository.findById(eventoId)
+                .orElseThrow(() -> new RuntimeException("Evento non trovato."));
 
-    public void eliminaEvento(Long id) {
-        Evento evento = trovaPerId(id);
+        // Verifica che l'utente sia l'organizzatore dell'evento
+        if (!evento.getOrganizzatore().getId().equals(userId)) {
+            throw new AccessDeniedException("Non sei l'organizzatore di questo evento.");
+        }
+
         eventoRepository.delete(evento);
     }
-
-
-
-
 }

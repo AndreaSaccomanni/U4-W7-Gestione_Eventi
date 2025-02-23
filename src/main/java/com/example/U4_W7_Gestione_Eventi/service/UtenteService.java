@@ -32,7 +32,8 @@ public class UtenteService {
         ERuolo ruolo = (userDto.getRuolo() == null) ? ERuolo.ROLE_USER : userDto.getRuolo();
 
         // Popola i dati dell'utente
-        user.setRuolo(ruolo); // Imposta il ruolo come enum
+        user.setRuolo(ruolo);
+        user.setNome(userDto.getNome());
         user.setUsername(userDto.getUsername());
         user.setPassword(passwordEncoder.encode(userDto.getPassword()));
         user.setEmail(userDto.getEmail());

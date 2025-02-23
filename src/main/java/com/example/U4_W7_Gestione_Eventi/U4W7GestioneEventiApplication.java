@@ -7,7 +7,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class U4W7GestioneEventiApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(U4W7GestioneEventiApplication.class, args);
+		SpringApplication.
+				       run(U4W7GestioneEventiApplication.class, args);
 	}
 
 }

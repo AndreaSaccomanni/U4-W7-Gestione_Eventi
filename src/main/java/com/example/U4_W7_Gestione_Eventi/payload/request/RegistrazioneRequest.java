@@ -27,7 +27,7 @@ public class RegistrazioneRequest {
     @Email(message = "Devi inserire un email valida")
     private String email;
 
-    @NotBlank(message = "Il campo ruolo è obblgatorio")
+
     private ERuolo ruolo;
 }
 

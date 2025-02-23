@@ -43,18 +43,19 @@ public class UtenteController {
     @PostMapping("/new")
     public ResponseEntity<String> inserisciUtente(@RequestBody @Validated RegistrazioneRequest nuovoUtente, BindingResult validazione) {
         try {
-            if(validazione.hasErrors()){
-                String messaggioErrore = "ERRORE DI VALIDAZIONE";
-                for(ObjectError errore : validazione.getAllErrors()){
-                    messaggioErrore += errore.getDefaultMessage()+ "\n";
-                }
+            if (validazione.hasErrors()) {
+                String messaggioErrore = validazione.getAllErrors().stream()
+                        .map(ObjectError::getDefaultMessage)
+                        .collect(Collectors.joining("\n"));
                 return new ResponseEntity<>(messaggioErrore, HttpStatus.BAD_REQUEST);
             }
             return new ResponseEntity<>(servizi.insertUtente(nuovoUtente), HttpStatus.CREATED);
         } catch (UsernameDuplicateException e) {
-            return new ResponseEntity<>("Username gia utilizzato", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("Username già utilizzato", HttpStatus.BAD_REQUEST);
         } catch (EmailDuplicateException e) {
-            return new ResponseEntity<>("Email gia utilizzata", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("Email già utilizzata", HttpStatus.BAD_REQUEST);
+        } catch (Exception e) {
+            return new ResponseEntity<>("Errore interno del server", HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -91,9 +92,8 @@ public class UtenteController {
         JwtResponse responseJwt = new JwtResponse(
                 dettagliUtente.getUsername(),
                 dettagliUtente.getId(),
-                dettagliUtente.getPassword(),
-                ruoloWeb,  // ← RUOLO SINGOLO
                 dettagliUtente.getEmail(),
+                ruoloWeb,  // ← RUOLO SINGOLO
                 token
         );
 

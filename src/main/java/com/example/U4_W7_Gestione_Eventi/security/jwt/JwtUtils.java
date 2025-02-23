@@ -27,6 +27,9 @@ public class JwtUtils {
     public String creaJwtToken(Authentication autenticazione){
         //recupero il dettaglio principal (username)
         UserDetailsImpl utentePrincipal = (UserDetailsImpl) autenticazione.getPrincipal();
+        long expirationMillis = Long.parseLong(jwtExpiration); // Converte jwtExpiration in millisecondi
+
+        Date scadenza = new Date(System.currentTimeMillis() + expirationMillis);
 
         //creaizone del jwt
         //con setExpiration setto la data di scadenza, il giorno di oggi in millisecondi
@@ -34,7 +37,7 @@ public class JwtUtils {
         return Jwts.builder()
                 .setSubject(utentePrincipal.getUsername())
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(new Date().getTime() + jwtExpiration))
+                .setExpiration(scadenza)
                 .signWith(recuperoChiave(), SignatureAlgorithm.HS256)
                 .compact();
     }
