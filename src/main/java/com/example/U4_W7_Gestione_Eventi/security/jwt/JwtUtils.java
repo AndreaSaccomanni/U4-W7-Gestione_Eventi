@@ -10,7 +10,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 
 import java.security.Key;
-import java.util.Base64;
 import java.util.Date;
 @Component
 // funzionalità principali del token
@@ -36,6 +35,7 @@ public class JwtUtils {
         //più il valore nel properties di jwt.expiration che è in millisecondi
         return Jwts.builder()
                 .setSubject(utentePrincipal.getUsername())
+                .claim("roles", utentePrincipal.getRuolo())
                 .setIssuedAt(new Date())
                 .setExpiration(scadenza)
                 .signWith(recuperoChiave(), SignatureAlgorithm.HS256)

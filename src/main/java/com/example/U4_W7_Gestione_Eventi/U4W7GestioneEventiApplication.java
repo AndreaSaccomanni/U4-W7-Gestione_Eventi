@@ -10,5 +10,4 @@ public class U4W7GestioneEventiApplication {
 		SpringApplication.
 				       run(U4W7GestioneEventiApplication.class, args);
 	}
-
 }
