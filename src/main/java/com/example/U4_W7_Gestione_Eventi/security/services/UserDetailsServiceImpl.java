@@ -11,19 +11,14 @@ import org.springframework.stereotype.Service;
 import java.util.Optional;
 @Service
 public class UserDetailsServiceImpl implements UserDetailsService {
-
     @Autowired
-    UtenteRepository repoUser;
+    UtenteRepository utenteRepository;
 
-    //metodo dell'interfaccia UserDetailsService gia presente in Spring
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        Optional<Utente> utente = (repoUser.findByUsername(username));
+        Utente utente = utenteRepository.findByUsername(username)
+                .orElseThrow(() -> new UsernameNotFoundException("Utente non trovato con username: " + username));
 
-        Utente user = utente.orElseThrow();
-
-        //ritornare un oggetto di tipo interfaccia UserDetails
-        //contenitore delle info che inserirò nel token
-        return UserDetailsImpl.costruisciOggetto(user);
+        return UserDetailsImpl.costruisciOggetto(utente);
     }
 }

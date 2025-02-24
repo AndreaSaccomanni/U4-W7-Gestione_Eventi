@@ -25,5 +25,8 @@ public class CreazioneEventoRequest {
 
     @NotBlank(message = "Il campo 'luogo' è obbligatorio")
     private String luogo;
+
+    @NotBlank(message = "Il campo 'posti disponibili' è obbligatorio")
+    private int postiDisponibili;
 }
 

@@ -60,9 +60,10 @@ public class WebSecurityConfig {
                         .requestMatchers("/user/new").permitAll()
                         .requestMatchers("/user/login").permitAll()
                         .requestMatchers("/error").permitAll()
+                        .requestMatchers("/prenotazioni/new").hasAuthority("ROLE_USER")
                         .requestMatchers(HttpMethod.POST, "/eventi/new").hasRole("EVENT_ORGANIZER")
-                        .requestMatchers(HttpMethod.PUT, "/eventi/**").hasRole("EVENT_ORGANIZER")
-                        .requestMatchers(HttpMethod.DELETE, "/eventi/**").hasRole("EVENT_ORGANIZER")
+                        .requestMatchers(HttpMethod.PUT, "/eventi/update/**").hasRole("EVENT_ORGANIZER")
+                        .requestMatchers(HttpMethod.DELETE, "/eventi/delete/**").hasRole("EVENT_ORGANIZER")
                         .anyRequest().authenticated());
 
         http.authenticationProvider(authenticationProvider());

@@ -4,13 +4,17 @@ import com.example.U4_W7_Gestione_Eventi.entities.Evento;
 import com.example.U4_W7_Gestione_Eventi.entities.Utente;
 import com.example.U4_W7_Gestione_Eventi.payload.request.CreazioneEventoRequest;
 import com.example.U4_W7_Gestione_Eventi.payload.request.ModificaEventoRequest;
+import com.example.U4_W7_Gestione_Eventi.security.services.UserDetailsImpl;
 import com.example.U4_W7_Gestione_Eventi.service.EventoService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.nio.file.AccessDeniedException;
@@ -26,10 +30,18 @@ public class EventoController {
     // Endpoint per creare un evento
     @PostMapping("/new")
     @PreAuthorize("hasRole('EVENT_ORGANIZER')")
-    public ResponseEntity<?> creaEvento(@AuthenticationPrincipal Utente utente,
-                                        @RequestBody CreazioneEventoRequest eventoRequest,
+    public ResponseEntity<?> creaEvento(@RequestBody @Validated CreazioneEventoRequest eventoRequest,
                                         BindingResult bindingResult) {
         try {
+            // Recupera l'utente autenticato dal contesto di sicurezza
+            Authentication autenticazione = SecurityContextHolder.getContext().getAuthentication();
+            if (autenticazione == null || !(autenticazione.getPrincipal() instanceof UserDetailsImpl)) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Utente non autenticato.");
+            }
+
+            UserDetailsImpl userDetails = (UserDetailsImpl) autenticazione.getPrincipal();
+            Utente utente = userDetails.getUtente(); // Recupera l'oggetto Utente completo
+
             // Verifica se l'utente è un organizzatore
             if (!utente.isOrganizzatore()) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Solo gli organizzatori possono creare eventi.");
@@ -49,7 +61,8 @@ public class EventoController {
                     eventoRequest.getTitolo(),
                     eventoRequest.getDescrizione(),
                     eventoRequest.getDataEvento(),
-                    eventoRequest.getLuogo()
+                    eventoRequest.getLuogo(),
+                    eventoRequest.getPostiDisponibili()
             );
 
             return ResponseEntity.status(HttpStatus.CREATED).body(nuovoEvento);
@@ -59,11 +72,11 @@ public class EventoController {
     }
 
     // Endpoint per modificare un evento
-    @PutMapping("/{id}")
+    @PutMapping("/update/{id}")
     @PreAuthorize("hasRole('EVENT_ORGANIZER')")
     public ResponseEntity<?> modificaEvento(@AuthenticationPrincipal Utente utente,
                                             @PathVariable Long id,
-                                            @RequestBody ModificaEventoRequest eventoRequest,
+                                            @RequestBody @Validated ModificaEventoRequest eventoRequest,
                                             BindingResult bindingResult) {
         try {
             // Verifica se l'utente è un organizzatore
@@ -100,7 +113,7 @@ public class EventoController {
     }
 
     // Endpoint per eliminare un evento
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/delete/{id}")
     @PreAuthorize("hasRole('EVENT_ORGANIZER')")
     public ResponseEntity<?> rimuoviEvento(@AuthenticationPrincipal Utente utente,
                                            @PathVariable Long id) {
