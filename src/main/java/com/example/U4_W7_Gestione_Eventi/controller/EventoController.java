@@ -2,6 +2,7 @@ package com.example.U4_W7_Gestione_Eventi.controller;
 
 import com.example.U4_W7_Gestione_Eventi.entities.Evento;
 import com.example.U4_W7_Gestione_Eventi.entities.Utente;
+import com.example.U4_W7_Gestione_Eventi.payload.EventoDTO;
 import com.example.U4_W7_Gestione_Eventi.payload.request.CreazioneEventoRequest;
 import com.example.U4_W7_Gestione_Eventi.payload.request.ModificaEventoRequest;
 import com.example.U4_W7_Gestione_Eventi.security.services.UserDetailsImpl;
@@ -10,9 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -27,37 +26,23 @@ public class EventoController {
     @Autowired
     private EventoService eventoService;
 
-    // Endpoint per creare un evento
     @PostMapping("/new")
     @PreAuthorize("hasRole('EVENT_ORGANIZER')")
     public ResponseEntity<?> creaEvento(@RequestBody @Validated CreazioneEventoRequest eventoRequest,
-                                        BindingResult bindingResult) {
+                                        BindingResult validation,
+                                        @AuthenticationPrincipal(errorOnInvalidType=true) UserDetailsImpl utenteImpl) {
+
+        Utente utente  = utenteImpl.getUser();
+        // Gestione validazione dei dati
+        if (validation.hasErrors()) {
+            String errorMessage = validation.getAllErrors().stream()
+                    .map(error -> error.getDefaultMessage())
+                    .collect(Collectors.joining("\n"));
+            return ResponseEntity.badRequest().body(errorMessage);
+        }
+
         try {
-            // Recupera l'utente autenticato dal contesto di sicurezza
-            Authentication autenticazione = SecurityContextHolder.getContext().getAuthentication();
-            if (autenticazione == null || !(autenticazione.getPrincipal() instanceof UserDetailsImpl)) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Utente non autenticato.");
-            }
-
-            UserDetailsImpl userDetails = (UserDetailsImpl) autenticazione.getPrincipal();
-            Utente utente = userDetails.getUtente(); // Recupera l'oggetto Utente completo
-
-            // Verifica se l'utente è un organizzatore
-            if (!utente.isOrganizzatore()) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Solo gli organizzatori possono creare eventi.");
-            }
-
-            // Controllo errori di validazione
-            if (bindingResult.hasErrors()) {
-                String errorMessage = bindingResult.getAllErrors().stream()
-                        .map(error -> error.getDefaultMessage())
-                        .collect(Collectors.joining("\n"));
-                return ResponseEntity.badRequest().body(errorMessage);
-            }
-
-            // Creazione evento
-            Evento nuovoEvento = eventoService.creaEvento(
-                    utente.getId(),
+            EventoDTO eventoDTO = new EventoDTO(
                     eventoRequest.getTitolo(),
                     eventoRequest.getDescrizione(),
                     eventoRequest.getDataEvento(),
@@ -65,71 +50,74 @@ public class EventoController {
                     eventoRequest.getPostiDisponibili()
             );
 
+            Evento nuovoEvento = eventoService.creaEvento(utente.getId(), eventoDTO);
             return ResponseEntity.status(HttpStatus.CREATED).body(nuovoEvento);
-        } catch (IllegalArgumentException | AccessDeniedException e) {
+        } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (AccessDeniedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Errore interno del server.");
         }
     }
 
-    // Endpoint per modificare un evento
+
     @PutMapping("/update/{id}")
     @PreAuthorize("hasRole('EVENT_ORGANIZER')")
     public ResponseEntity<?> modificaEvento(@AuthenticationPrincipal Utente utente,
                                             @PathVariable Long id,
                                             @RequestBody @Validated ModificaEventoRequest eventoRequest,
-                                            BindingResult bindingResult) {
+                                            BindingResult validation) {
+
+        if (validation.hasErrors()) {
+            String errorMessage = validation.getAllErrors().stream()
+                    .map(error -> error.getDefaultMessage())
+                    .collect(Collectors.joining("\n"));
+            return ResponseEntity.badRequest().body(errorMessage);
+        }
+
         try {
-            // Verifica se l'utente è un organizzatore
-            if (!utente.isOrganizzatore()) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Solo gli organizzatori possono modificare eventi.");
-            }
-
-            // Controllo errori di validazione
-            if (bindingResult.hasErrors()) {
-                String errorMessage = bindingResult.getAllErrors().stream()
-                        .map(error -> error.getDefaultMessage())
-                        .collect(Collectors.joining("\n"));
-                return ResponseEntity.badRequest().body(errorMessage);
-            }
-
-            // Modifica evento
-            Evento eventoModificato = eventoService.modificaEvento(
-                    utente.getId(),
-                    id,
+            EventoDTO eventoDTO = new EventoDTO(
                     eventoRequest.getTitolo(),
                     eventoRequest.getDescrizione(),
                     eventoRequest.getDataEvento(),
-                    eventoRequest.getLuogo()
+                    eventoRequest.getLuogo(),
+                    eventoRequest.getPostiDisponibili()
             );
 
+            Evento eventoModificato = eventoService.modificaEvento(utente.getId(), id, eventoDTO);
             return ResponseEntity.ok(eventoModificato);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (AccessDeniedException e) {
-            throw new RuntimeException(e);
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Evento non trovato.");
         }
     }
 
-    // Endpoint per eliminare un evento
+
     @DeleteMapping("/delete/{id}")
     @PreAuthorize("hasRole('EVENT_ORGANIZER')")
     public ResponseEntity<?> rimuoviEvento(@AuthenticationPrincipal Utente utente,
                                            @PathVariable Long id) {
-        try {
-            // Verifica se l'utente è un organizzatore
-            if (!utente.isOrganizzatore()) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Solo gli organizzatori possono rimuovere eventi.");
-            }
+        if (!utente.isOrganizzatore()) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Solo gli organizzatori possono rimuovere eventi.");
+        }
 
-            // Rimozione evento
+        try {
+
             eventoService.rimuoviEvento(utente.getId(), id);
             return ResponseEntity.noContent().build();
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (AccessDeniedException e) {
-            throw new RuntimeException(e);
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Evento non trovato.");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Errore interno del server.");
         }
     }
 }

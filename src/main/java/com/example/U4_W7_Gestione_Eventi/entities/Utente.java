@@ -41,7 +41,7 @@ public class Utente {
     private ERuolo ruolo;
 
     @OneToMany(mappedBy = "organizzatore", cascade = CascadeType.ALL)
-    private Set<Evento> eventiOrganizzati = new HashSet<>(); // Usare Set per evitare duplicati
+    private Set<Evento> eventiOrganizzati = new HashSet<>();
 
     @OneToMany(mappedBy = "utente", cascade = CascadeType.ALL)
     private Set<Prenotazione> prenotazioni = new HashSet<>();
@@ -57,6 +57,15 @@ public class Utente {
 
     public boolean isOrganizzatore() {
         return this.ruolo == ERuolo.ROLE_EVENT_ORGANIZER;
+    }
+
+    @Override
+    public String toString() {
+        return "Utente{" +
+
+                ", nome='" + nome + '\'' +
+
+                '}';
     }
 }
 

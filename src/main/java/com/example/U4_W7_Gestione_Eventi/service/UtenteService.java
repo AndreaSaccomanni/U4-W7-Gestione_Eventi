@@ -28,10 +28,10 @@ public class UtenteService {
 
         Utente user = new Utente();
 
-        // Se il ruolo non è specificato, assegnare il ruolo predefinito "ROLE_USER"
+        // Se il ruolo non è specificato, assegno il ruolo predefinito "ROLE_USER"
         ERuolo ruolo = (userDto.getRuolo() == null) ? ERuolo.ROLE_USER : userDto.getRuolo();
 
-        // Popola i dati dell'utente
+
         user.setRuolo(ruolo);
         user.setNome(userDto.getNome());
         user.setUsername(userDto.getUsername());
@@ -42,11 +42,11 @@ public class UtenteService {
         // Salva l'utente nel repository e recupera l'ID assegnato
         Long idUtente = utenteRepo.save(user).getId();
 
-        // Restituisce un messaggio di conferma
+
         return "L'utente " + user.getCognome() + " è stato salvato correttamente con id: " + idUtente;
     }
 
-    // Verifica se email o username sono già presenti nel sistema
+    // Controllo se email o username sono già presenti nel sistema
     public void checkDuplicateKey(String username, String email) throws UsernameDuplicateException, EmailDuplicateException {
         if (utenteRepo.existsByEmail(email)) {
             throw new EmailDuplicateException("Email già presente nel sistema");

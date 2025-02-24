@@ -14,6 +14,7 @@ public class ModificaEventoRequest {
     private String descrizione;
     private LocalDate dataEvento;
     private String luogo;
+    private int postiDisponibili;
 
 
 }

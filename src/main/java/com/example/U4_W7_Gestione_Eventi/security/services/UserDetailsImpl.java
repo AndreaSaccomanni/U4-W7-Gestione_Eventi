@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+
 import java.util.Collection;
 import java.util.List;
 
@@ -26,7 +27,8 @@ public class UserDetailsImpl implements UserDetails {
     @JsonIgnore
     private String password;
 
-    private Utente utente;
+    private Utente user;
+
 
     public static UserDetailsImpl costruisciOggetto(Utente user) {
         return new UserDetailsImpl(
@@ -37,6 +39,17 @@ public class UserDetailsImpl implements UserDetails {
                 user.getPassword(),
                 user
         );
+    }
+
+    @Override
+    public String toString() {
+        return "UserDetailsImpl{" +
+                "id=" + id +
+                ", username='" + username + '\'' +
+                ", email='" + email + '\'' +
+                ", ruolo=" + ruolo +
+                ", password='" + password + '\'' +
+                '}';
     }
 
     @Override

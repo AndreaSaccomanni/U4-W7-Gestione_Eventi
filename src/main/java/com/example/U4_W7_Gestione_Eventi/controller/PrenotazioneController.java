@@ -38,7 +38,7 @@ public class PrenotazioneController {
             }
 
             UserDetailsImpl userDetails = (UserDetailsImpl) autenticazione.getPrincipal();
-            Utente utente = userDetails.getUtente(); // Recupera l'oggetto Utente completo
+            Utente utente = userDetails.getUser(); // Recupera l'oggetto Utente completo
 
             // Controllo errori di validazione
             if (bindingResult.hasErrors()) {
